@@ -1,0 +1,13 @@
+// $Id$
+// vim:ft=javascript
+
+// If your extension references something external, use ARG_WITH
+// ARG_WITH("linger_TrieTree", "for linger_TrieTree support", "no");
+
+// Otherwise, use ARG_ENABLE
+// ARG_ENABLE("linger_TrieTree", "enable linger_TrieTree support", "no");
+
+if (PHP_LINGER_TRIETREE != "no") {
+	EXTENSION("linger_TrieTree", "linger_TrieTree.c");
+}
+
