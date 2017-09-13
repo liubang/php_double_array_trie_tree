@@ -1,21 +1,5 @@
-dnl $Id$
-dnl config.m4 for extension linger_TrieTree
-
-dnl Comments in this file start with the string 'dnl'.
-dnl Remove where necessary. This file will not work
-dnl without editing.
-
-dnl If your extension references something external, use with:
-
-dnl PHP_ARG_WITH(linger_TrieTree, for linger_TrieTree support,
-dnl Make sure that the comment is aligned:
-dnl [  --with-linger_TrieTree             Include linger_TrieTree support])
-
-dnl Otherwise use enable:
-
-dnl PHP_ARG_ENABLE(linger_TrieTree, whether to enable linger_TrieTree support,
-dnl Make sure that the comment is aligned:
-dnl [  --enable-linger_TrieTree           Enable linger_TrieTree support])
+PHP_ARG_ENABLE(linger_TrieTree, whether to enable linger_TrieTree support,
+[  --enable-linger_TrieTree           Enable linger_TrieTree support])
 
 if test "$PHP_LINGER_TRIETREE" != "no"; then
   dnl Write more examples of tests here...
@@ -57,7 +41,7 @@ if test "$PHP_LINGER_TRIETREE" != "no"; then
   dnl   -L$LINGER_TRIETREE_DIR/$PHP_LIBDIR -lm
   dnl ])
   dnl
-  dnl PHP_SUBST(LINGER_TRIETREE_SHARED_LIBADD)
+  PHP_SUBST(LINGER_TRIETREE_SHARED_LIBADD)
 
   PHP_NEW_EXTENSION(linger_TrieTree, linger_TrieTree.c, $ext_shared)
 fi
