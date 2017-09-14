@@ -52,7 +52,7 @@ static void linger_TrieTree_free_object_storage_handler(TrieObject *intern TSRML
 zend_object_value linger_TrieTree_create_object_handler(zend_class_entry *class_type TSRMLS_DC)
 {
     zend_object_value retval;
-    TrieObject *intern = emalloc(sizeof(TrieObject)); 
+    TrieObject *intern = emalloc(sizeof(TrieObject));
     memset(intern, 0, sizeof(TrieObject));
     Trie *trie;
     AlphaMap *alpha_map;
@@ -72,12 +72,12 @@ zend_object_value linger_TrieTree_create_object_handler(zend_class_entry *class_
     intern->trie = trie;
     zend_object_std_init(&intern->std, class_type TSRMLS_CC);
     retval.handle = zend_objects_store_put(
-            intern,
-            (zend_objects_store_dtor_t) zend_objects_destroy_object,
-            (zend_objects_free_object_storage_t) linger_TrieTree_free_object_storage_handler,
-            NULL
-            TSRMLS_CC
-            );
+                        intern,
+                        (zend_objects_store_dtor_t) zend_objects_destroy_object,
+                        (zend_objects_free_object_storage_t) linger_TrieTree_free_object_storage_handler,
+                        NULL
+                        TSRMLS_CC
+                    );
     retval.handlers = &linger_TrieTree_object_handlers;
     return retval;
 }
@@ -103,58 +103,58 @@ PHP_METHOD(linger_TrieTree, __construct)
 
 static int trie_search_one(Trie *trie, const AlphaChar *text, int *offset, TrieData *length)
 {
-	TrieState *s;
-	const AlphaChar *p;
-	const AlphaChar *base;
+    TrieState *s;
+    const AlphaChar *p;
+    const AlphaChar *base;
 
-	base = text;
+    base = text;
     if (! (s = trie_root(trie))) {
         return -1;
     }
 
-	while (*text) {		
-		p = text;
-		if (! trie_state_is_walkable(s, *p)) {
+    while (*text) {
+        p = text;
+        if (! trie_state_is_walkable(s, *p)) {
             trie_state_rewind(s);
-			text++;
-			continue;
-		} else {
-			trie_state_walk(s, *p++);
+            text++;
+            continue;
+        } else {
+            trie_state_walk(s, *p++);
         }
 
-		while (trie_state_is_walkable(s, *p) && ! trie_state_is_terminal(s))
-			trie_state_walk(s, *p++);
+        while (trie_state_is_walkable(s, *p) && ! trie_state_is_terminal(s))
+            trie_state_walk(s, *p++);
 
-		if (trie_state_is_terminal(s)) {
-			*offset = text - base;
-			*length = p - text;
+        if (trie_state_is_terminal(s)) {
+            *offset = text - base;
+            *length = p - text;
             trie_state_free(s);
-            
-			return 1;
-		}
+
+            return 1;
+        }
 
         trie_state_rewind(s);
-		text++;
-	}
+        text++;
+    }
     trie_state_free(s);
 
-	return 0;
+    return 0;
 }
 
 
 static int trie_search_all(Trie *trie, const AlphaChar *text, zval **data)
 {
-	TrieState *s;
-	const AlphaChar *p;
-	const AlphaChar *base;
+    TrieState *s;
+    const AlphaChar *p;
+    const AlphaChar *base;
     zval *word = NULL;
 
-	base = text;
+    base = text;
     if (! (s = trie_root(trie))) {
         return -1;
     }
 
-    while (*text) {   
+    while (*text) {
         p = text;
         if(! trie_state_is_walkable(s, *p)) {
             trie_state_rewind(s);
@@ -163,20 +163,20 @@ static int trie_search_all(Trie *trie, const AlphaChar *text, zval **data)
         }
 
         while(*p && trie_state_is_walkable(s, *p) && ! trie_state_is_leaf(s)) {
-            trie_state_walk(s, *p++);  
-            if (trie_state_is_terminal(s)) { 
+            trie_state_walk(s, *p++);
+            if (trie_state_is_terminal(s)) {
                 MAKE_STD_ZVAL(word);
                 array_init_size(word, 3);
                 add_next_index_long(word, text - base);
                 add_next_index_long(word, p - text);
-                add_next_index_zval(*data, word);        
-            }        
+                add_next_index_zval(*data, word);
+            }
         }
         trie_state_rewind(s);
         text++;
     }
     trie_state_free(s);
-	return 0;
+    return 0;
 }
 
 PHP_METHOD(linger_TrieTree, searchOne)
@@ -196,7 +196,7 @@ PHP_METHOD(linger_TrieTree, searchOne)
     TrieObject *intern = zend_object_store_get_object(getThis() TSRMLS_CC);
     alpha_text = emalloc(sizeof(AlphaChar) * (text_len + 1));
     for (int i = 0; i < text_len; i++) {
-        alpha_text[i] = (AlphaChar) text[i]; 
+        alpha_text[i] = (AlphaChar) text[i];
     }
     alpha_text[text_len] = TRIE_CHAR_TERM;
     int offset = -1, ret;
@@ -236,7 +236,7 @@ PHP_METHOD(linger_TrieTree, searchAll)
     ret = trie_search_all(intern->trie, alpha_text, &return_value);
     efree(alpha_text);
     if (ret == 0) {
-        return;     
+        return;
     } else {
         RETURN_FALSE;
     }
@@ -246,7 +246,7 @@ const zend_function_entry linger_TrieTree_methods[] = {
     PHP_ME(linger_TrieTree, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     PHP_ME(linger_TrieTree, searchOne, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(linger_TrieTree, searchAll, NULL, ZEND_ACC_PUBLIC)
-	PHP_FE_END	
+    PHP_FE_END
 };
 
 /* {{{ PHP_MINIT_FUNCTION
@@ -258,7 +258,7 @@ PHP_MINIT_FUNCTION(linger_TrieTree)
     linger_TrieTree_ce = zend_register_internal_class(&ce TSRMLS_CC);
     linger_TrieTree_ce->create_object = linger_TrieTree_create_object_handler;
     memcpy(&linger_TrieTree_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-	return SUCCESS;
+    return SUCCESS;
 }
 /* }}} */
 
@@ -266,7 +266,7 @@ PHP_MINIT_FUNCTION(linger_TrieTree)
  */
 PHP_MSHUTDOWN_FUNCTION(linger_TrieTree)
 {
-	return SUCCESS;
+    return SUCCESS;
 }
 /* }}} */
 
@@ -274,7 +274,7 @@ PHP_MSHUTDOWN_FUNCTION(linger_TrieTree)
  */
 PHP_RINIT_FUNCTION(linger_TrieTree)
 {
-	return SUCCESS;
+    return SUCCESS;
 }
 /* }}} */
 
@@ -282,7 +282,7 @@ PHP_RINIT_FUNCTION(linger_TrieTree)
  */
 PHP_RSHUTDOWN_FUNCTION(linger_TrieTree)
 {
-	return SUCCESS;
+    return SUCCESS;
 }
 /* }}} */
 
@@ -290,25 +290,25 @@ PHP_RSHUTDOWN_FUNCTION(linger_TrieTree)
  */
 PHP_MINFO_FUNCTION(linger_TrieTree)
 {
-	php_info_print_table_start();
-	php_info_print_table_header(2, "linger_TrieTree support", "enabled");
-	php_info_print_table_end();
+    php_info_print_table_start();
+    php_info_print_table_header(2, "linger_TrieTree support", "enabled");
+    php_info_print_table_end();
 }
 /* }}} */
 
 /* {{{ linger_TrieTree_module_entry
  */
 zend_module_entry linger_TrieTree_module_entry = {
-	STANDARD_MODULE_HEADER,
-	"linger_TrieTree",
+    STANDARD_MODULE_HEADER,
+    "linger_TrieTree",
     NULL,
-	PHP_MINIT(linger_TrieTree),
-	PHP_MSHUTDOWN(linger_TrieTree),
-	PHP_RINIT(linger_TrieTree),		
-	PHP_RSHUTDOWN(linger_TrieTree),	
-	PHP_MINFO(linger_TrieTree),
-	PHP_LINGER_TRIETREE_VERSION,
-	STANDARD_MODULE_PROPERTIES
+    PHP_MINIT(linger_TrieTree),
+    PHP_MSHUTDOWN(linger_TrieTree),
+    PHP_RINIT(linger_TrieTree),
+    PHP_RSHUTDOWN(linger_TrieTree),
+    PHP_MINFO(linger_TrieTree),
+    PHP_LINGER_TRIETREE_VERSION,
+    STANDARD_MODULE_PROPERTIES
 };
 /* }}} */
 

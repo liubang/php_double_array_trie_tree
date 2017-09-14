@@ -23,7 +23,7 @@
 extern zend_module_entry linger_TrieTree_module_entry;
 #define phpext_linger_TrieTree_ptr &linger_TrieTree_module_entry
 
-#define PHP_LINGER_TRIETREE_VERSION "1.0.0" 
+#define PHP_LINGER_TRIETREE_VERSION "1.0.0"
 
 #ifdef PHP_WIN32
 #	define PHP_LINGER_TRIETREE_API __declspec(dllexport)
