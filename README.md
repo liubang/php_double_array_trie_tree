@@ -2,6 +2,17 @@
 
 ## Useage
 
+**Compile and Install**
+
+```shell
+git clone https://github.com/iliubang/php-double-array-trie-tree.git
+cd php-double-array-trie-tree
+phpize
+./configure
+make && sudo make install
+```
+
+
 ```php
 <?php
 
@@ -19,5 +30,6 @@ print_r($res);
 ## Thanks
 
 Inspired by [wulijun/php-ext-trie-filter](https://github.com/wulijun/php-ext-trie-filter.git)
+
 Depends on [libdatrie-0.2.4](https://linux.thai.net/~thep/datrie/datrie.html)
 
