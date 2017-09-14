@@ -1,5 +1,9 @@
 # php spam word filter based on Double-Array Trie tree
 
+## Dependence
+
+- php >=5.4 && php < 7
+
 ## Useage
 
 **Compile and Install**
@@ -11,7 +15,6 @@ phpize
 ./configure
 make && sudo make install
 ```
-
 
 ```php
 <?php
