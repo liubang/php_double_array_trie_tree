@@ -49,6 +49,23 @@ static void linger_TrieTree_free_object_storage_handler(TrieObject *intern TSRML
     linger_efree(intern);
 }
 
+#define TRIE_NEW(trie, alpha_map)                                       \
+    do {                                                                \
+        alpha_map = alpha_map_new();                                    \
+        if (!alpha_map) {                                               \
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "init error");    \
+        }                                                               \
+        if (alpha_map_add_range(alpha_map, 0x00, 0xff) != 0) {          \
+            alpha_map_free(alpha_map);                                  \
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "init error");    \
+        }                                                               \
+        trie = trie_new(alpha_map);                                     \
+        alpha_map_free(alpha_map);                                      \
+        if (!trie) {                                                    \
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "init error");    \
+        }                                                               \
+    } while(0)
+
 zend_object_value linger_TrieTree_create_object_handler(zend_class_entry *class_type TSRMLS_DC)
 {
     zend_object_value retval;
@@ -56,6 +73,8 @@ zend_object_value linger_TrieTree_create_object_handler(zend_class_entry *class_
     memset(intern, 0, sizeof(TrieObject));
     Trie *trie;
     AlphaMap *alpha_map;
+    TRIE_NEW(trie, alpha_map);
+    /*
     alpha_map = alpha_map_new();
     if (!alpha_map) {
         php_error_docref(NULL TSRMLS_CC, E_ERROR, "init error");
@@ -69,6 +88,7 @@ zend_object_value linger_TrieTree_create_object_handler(zend_class_entry *class_
     if (!trie) {
         php_error_docref(NULL TSRMLS_CC, E_ERROR, "init error");
     }
+    */
     intern->trie = trie;
     zend_object_std_init(&intern->std, class_type TSRMLS_CC);
     retval.handle = zend_objects_store_put(
@@ -241,10 +261,65 @@ PHP_METHOD(linger_TrieTree, searchAll)
     }
 }
 
+#define KEYWORD_MAX_LEN 1024
+
+PHP_METHOD(linger_TrieTree, build)
+{
+    zval *keyword_arr;
+    char *file;
+    int file_len;
+    AlphaChar alpha_key[KEYWORD_MAX_LEN + 1];
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zs", &keyword_arr, &file, &file_len) == FAILURE) {
+        RETURN_FALSE;
+    }
+    if (Z_TYPE_P(keyword_arr) != IS_ARRAY) {
+        zend_throw_exception(NULL, "the first parameter must be array", 0 TSRMLS_CC);
+        return;
+    }
+
+    zval **current;
+    HashTable *ht_keys = HASH_OF(keyword_arr);
+    if (!ht_keys) {
+        zend_throw_exception(NULL, "Couldn't get HashTable in parameter one", 0 TSRMLS_CC);
+        return;
+    }
+
+    Trie *trie;
+    AlphaMap *alpha_map;
+    TRIE_NEW(trie, alpha_map);
+    //TrieObject *intern = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+#define TRIE_STORE(p, alpha_key, trie)              \
+    do {                                            \
+        int i = 0;                                  \
+        while (*p && *p != '\n' && *p != '\r') {    \
+            alpha_key[i++] = (AlphaChar)*p;         \
+            p++;                                    \
+        }                                           \
+        alpha_key[i] = TRIE_CHAR_TERM;              \
+        if (!trie_store(trie, alpha_key, -1)) {     \
+            RETURN_FALSE;                           \
+        }                                           \
+    } while(0)
+
+    int size = 0;
+    for (zend_hash_internal_pointer_reset(ht_keys); zend_hash_get_current_data(ht_keys, (void **) &current) == SUCCESS; zend_hash_move_forward(ht_keys)) {
+        SEPARATE_ZVAL(current);
+        convert_to_string_ex(current);
+        char *word = Z_STRVAL_PP(current);
+        TRIE_STORE(word, alpha_key, trie);
+    }
+
+    trie_save(trie, file);
+    trie_free(trie);
+    RETURN_TRUE;
+}
+
 const zend_function_entry linger_TrieTree_methods[] = {
     PHP_ME(linger_TrieTree, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     PHP_ME(linger_TrieTree, searchOne, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(linger_TrieTree, searchAll, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(linger_TrieTree, build, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_FE_END
 };
 
