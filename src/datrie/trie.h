@@ -27,8 +27,8 @@
 #ifndef __TRIE_H
 #define __TRIE_H
 
-#include <datrie/triedefs.h>
-#include <datrie/alpha-map.h>
+#include "triedefs.h"
+#include "alpha-map.h"
 
 #ifdef __cplusplus
 extern "C" {

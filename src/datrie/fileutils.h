@@ -28,7 +28,7 @@
 #define __FILEUTILS_H
 
 #include <stdio.h>
-#include <datrie/typedefs.h>
+#include "typedefs.h"
 
 Bool   file_read_int32 (FILE *file, int32 *o_val);
 Bool   file_write_int32 (FILE *file, int32 val);

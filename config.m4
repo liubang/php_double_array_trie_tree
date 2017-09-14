@@ -42,6 +42,11 @@ if test "$PHP_LINGER_TRIETREE" != "no"; then
   dnl ])
   dnl
   PHP_SUBST(LINGER_TRIETREE_SHARED_LIBADD)
-
-  PHP_NEW_EXTENSION(linger_TrieTree, linger_TrieTree.c, $ext_shared)
+  source_files="src/datrie/alpha-map.c \
+                 src/datrie/darray.c \
+                 src/datrie/fileutils.c \
+                 src/datrie/tail.c \
+                 src/datrie/trie.c \
+                 linger_TrieTree.c"
+  PHP_NEW_EXTENSION(linger_TrieTree, $source_files, $ext_shared)
 fi
