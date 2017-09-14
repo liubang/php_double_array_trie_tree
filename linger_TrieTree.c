@@ -101,11 +101,23 @@ PHP_METHOD(linger_TrieTree, __construct)
     }
 }
 
-static int trie_search_one(Trie *trie, const AlphaChar *text, int *offset, TrieData *length)
+#define MAKE_ALPHA_TEXT(alpha_text, text, text_len)                 \
+    do {                                                            \
+        alpha_text = emalloc(sizeof(AlphaChar) * (text_len + 1));   \
+        for (int i = 0; i < text_len; i++) {                        \
+            alpha_text[i] = (AlphaChar) text[i];                    \
+        }                                                           \
+        alpha_text[text_len] = TRIE_CHAR_TERM;                      \
+    } while(0)
+
+
+static int trie_search_one(Trie *trie, unsigned char *org_text, int org_text_len, zval **data)
 {
     TrieState *s;
     const AlphaChar *p;
     const AlphaChar *base;
+    AlphaChar *text;
+    MAKE_ALPHA_TEXT(text, org_text, org_text_len);
 
     base = text;
     if (! (s = trie_root(trie))) {
@@ -126,10 +138,11 @@ static int trie_search_one(Trie *trie, const AlphaChar *text, int *offset, TrieD
             trie_state_walk(s, *p++);
 
         if (trie_state_is_terminal(s)) {
-            *offset = text - base;
-            *length = p - text;
             trie_state_free(s);
-
+            unsigned char *str = emalloc(sizeof(unsigned char) * (p - text));
+            strncpy(str, org_text + (text - base), p - text);
+            ZVAL_STRING(*data, str, 1);
+            linger_efree(str);
             return 1;
         }
 
@@ -137,18 +150,19 @@ static int trie_search_one(Trie *trie, const AlphaChar *text, int *offset, TrieD
         text++;
     }
     trie_state_free(s);
-
+    linger_efree(base);
     return 0;
 }
 
 
-static int trie_search_all(Trie *trie, const AlphaChar *text, zval **data)
+static int trie_search_all(Trie *trie, unsigned char *org_text, int org_text_len, zval **data)
 {
     TrieState *s;
     const AlphaChar *p;
     const AlphaChar *base;
+    AlphaChar *text;
+    MAKE_ALPHA_TEXT(text, org_text, org_text_len);
     zval *word = NULL;
-
     base = text;
     if (! (s = trie_root(trie))) {
         return -1;
@@ -161,14 +175,14 @@ static int trie_search_all(Trie *trie, const AlphaChar *text, zval **data)
             text++;
             continue;
         }
-
         while(*p && trie_state_is_walkable(s, *p) && ! trie_state_is_leaf(s)) {
             trie_state_walk(s, *p++);
             if (trie_state_is_terminal(s)) {
                 MAKE_STD_ZVAL(word);
-                array_init_size(word, 3);
-                add_next_index_long(word, text - base);
-                add_next_index_long(word, p - text);
+                unsigned char *str = emalloc(sizeof(unsigned char) * (p - text + 1));
+                strncpy(str, org_text + (text - base), p - text);
+                ZVAL_STRING(word, str, 1);
+                efree(str);
                 add_next_index_zval(*data, word);
             }
         }
@@ -176,8 +190,10 @@ static int trie_search_all(Trie *trie, const AlphaChar *text, zval **data)
         text++;
     }
     trie_state_free(s);
+    linger_efree(base);
     return 0;
 }
+
 
 PHP_METHOD(linger_TrieTree, searchOne)
 {
@@ -191,23 +207,13 @@ PHP_METHOD(linger_TrieTree, searchOne)
         zend_throw_exception(NULL, "empty str!", 0 TSRMLS_CC);
     }
 
-    array_init(return_value);
-    AlphaChar *alpha_text;
     TrieObject *intern = zend_object_store_get_object(getThis() TSRMLS_CC);
-    alpha_text = emalloc(sizeof(AlphaChar) * (text_len + 1));
-    for (int i = 0; i < text_len; i++) {
-        alpha_text[i] = (AlphaChar) text[i];
-    }
-    alpha_text[text_len] = TRIE_CHAR_TERM;
     int offset = -1, ret;
-    TrieData length = 0;
-    ret = trie_search_one(intern->trie, alpha_text, &offset, &length);
-    linger_efree(alpha_text);
+    ret = trie_search_one(intern->trie, text, text_len, &return_value);
     if (ret == 0) {
         return;
     } else if (ret == 1) {
-        add_next_index_long(return_value, offset);
-        add_next_index_long(return_value, length);
+
     } else {
         RETURN_FALSE;
     }
@@ -225,16 +231,9 @@ PHP_METHOD(linger_TrieTree, searchAll)
         return;
     }
     array_init(return_value);
-    AlphaChar *alpha_text;
     int i, ret;
-    alpha_text = emalloc(sizeof(AlphaChar) * (text_len + 1));
-    for (i = 0; i < text_len; i++) {
-        alpha_text[i] = (AlphaChar)text[i];
-    }
-    alpha_text[text_len] = TRIE_CHAR_TERM;
     TrieObject *intern = zend_object_store_get_object(getThis() TSRMLS_CC);
-    ret = trie_search_all(intern->trie, alpha_text, &return_value);
-    efree(alpha_text);
+    ret = trie_search_all(intern->trie, text, text_len, &return_value);
     if (ret == 0) {
         return;
     } else {
