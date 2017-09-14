@@ -287,7 +287,6 @@ PHP_METHOD(linger_TrieTree, build)
     Trie *trie;
     AlphaMap *alpha_map;
     TRIE_NEW(trie, alpha_map);
-    //TrieObject *intern = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 #define TRIE_STORE(p, alpha_key, trie)              \
     do {                                            \
@@ -306,7 +305,7 @@ PHP_METHOD(linger_TrieTree, build)
     for (zend_hash_internal_pointer_reset(ht_keys); zend_hash_get_current_data(ht_keys, (void **) &current) == SUCCESS; zend_hash_move_forward(ht_keys)) {
         SEPARATE_ZVAL(current);
         convert_to_string_ex(current);
-        char *word = Z_STRVAL_PP(current);
+        unsigned char *word = Z_STRVAL_PP(current);
         TRIE_STORE(word, alpha_key, trie);
     }
 
