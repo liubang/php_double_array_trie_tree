@@ -145,8 +145,10 @@ static int trie_search_one(Trie *trie, unsigned char *org_text, int org_text_len
 
         if (trie_state_is_terminal(s)) {
             trie_state_free(s);
-            unsigned char *str = emalloc(sizeof(unsigned char) * (p - text));
-            strncpy(str, org_text + (text - base), p - text);
+            int str_len = p - text;
+            unsigned char *str = emalloc(sizeof(unsigned char) * (str_len + 1));
+            strncpy(str, org_text + (text - base), str_len);
+            str[str_len] = '\0';
             ZVAL_STRING(*data, str, 1);
             linger_efree(str);
             return 1;
@@ -185,8 +187,10 @@ static int trie_search_all(Trie *trie, unsigned char *org_text, int org_text_len
             trie_state_walk(s, *p++);
             if (trie_state_is_terminal(s)) {
                 MAKE_STD_ZVAL(word);
-                unsigned char *str = emalloc(sizeof(unsigned char) * (p - text + 1));
-                strncpy(str, org_text + (text - base), p - text);
+                int str_len = p - text;
+                unsigned char *str = emalloc(sizeof(unsigned char) * (str_len + 1));
+                strncpy(str, org_text + (text - base), str_len);
+                str[str_len] = '\0';
                 ZVAL_STRING(word, str, 1);
                 efree(str);
                 add_next_index_zval(*data, word);

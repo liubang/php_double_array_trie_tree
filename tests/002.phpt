@@ -19,10 +19,10 @@ print_r($res);
 --EXPECTF--
 object(Linger\TrieTree)#1 (0) {
 }
-string(6) "admin"
+string(5) "admin"
 Array
 (
-    [0] => admin
+    [0] => admin
     [1] => 哈哈
     [2] => 管理员
     [3] => 哈哈
