@@ -74,21 +74,6 @@ zend_object_value linger_TrieTree_create_object_handler(zend_class_entry *class_
     Trie *trie;
     AlphaMap *alpha_map;
     TRIE_NEW(trie, alpha_map);
-    /*
-    alpha_map = alpha_map_new();
-    if (!alpha_map) {
-        php_error_docref(NULL TSRMLS_CC, E_ERROR, "init error");
-    }
-    if (alpha_map_add_range(alpha_map, 0x00, 0xff) != 0) {
-        alpha_map_free(alpha_map);
-        php_error_docref(NULL TSRMLS_CC, E_ERROR, "init error");
-    }
-    trie = trie_new(alpha_map);
-    alpha_map_free(alpha_map);
-    if (!trie) {
-        php_error_docref(NULL TSRMLS_CC, E_ERROR, "init error");
-    }
-    */
     intern->trie = trie;
     zend_object_std_init(&intern->std, class_type TSRMLS_CC);
     retval.handle = zend_objects_store_put(
