@@ -109,7 +109,8 @@ PHP_METHOD(linger_TrieTree, __construct)
 #define MAKE_ALPHA_TEXT(alpha_text, text, text_len)                 \
     do {                                                            \
         alpha_text = emalloc(sizeof(AlphaChar) * (text_len + 1));   \
-        for (int i = 0; i < text_len; i++) {                        \
+        int i;                                                      \
+        for (i = 0; i < text_len; i++) {                        \
             alpha_text[i] = (AlphaChar) text[i];                    \
         }                                                           \
         alpha_text[text_len] = TRIE_CHAR_TERM;                      \
@@ -164,7 +165,7 @@ static int trie_search_all(Trie *trie, unsigned char *org_text, int org_text_len
 {
     TrieState *s;
     const AlphaChar *p;
-    const AlphaChar *base;
+    AlphaChar *base;
     AlphaChar *text;
     MAKE_ALPHA_TEXT(text, org_text, org_text_len);
     zval *word = NULL;
