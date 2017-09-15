@@ -1,5 +1,7 @@
 # php spam word filter based on Double-Array Trie tree
 
+[![Build Status](https://travis-ci.org/iliubang/php-double-array-trie-tree.svg?branch=master)](https://travis-ci.org/iliubang/php-double-array-trie-tree)
+
 ## Dependence
 
 - php >=5.4 && php < 7
