@@ -164,7 +164,7 @@ static int trie_search_all(Trie *trie, unsigned char *org_text, int org_text_len
 {
     TrieState *s;
     const AlphaChar *p;
-    const AlphaChar *base;
+    AlphaChar *base;
     AlphaChar *text;
     MAKE_ALPHA_TEXT(text, org_text, org_text_len);
     zval *word = NULL;
