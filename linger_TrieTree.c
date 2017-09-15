@@ -109,7 +109,8 @@ PHP_METHOD(linger_TrieTree, __construct)
 #define MAKE_ALPHA_TEXT(alpha_text, text, text_len)                 \
     do {                                                            \
         alpha_text = emalloc(sizeof(AlphaChar) * (text_len + 1));   \
-        for (int i = 0; i < text_len; i++) {                        \
+        int i;                                                      \
+        for (i = 0; i < text_len; i++) {                        \
             alpha_text[i] = (AlphaChar) text[i];                    \
         }                                                           \
         alpha_text[text_len] = TRIE_CHAR_TERM;                      \
