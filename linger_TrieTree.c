@@ -192,7 +192,7 @@ static int trie_search_all(Trie *trie, unsigned char *org_text, int org_text_len
                 strncpy(str, org_text + (text - base), str_len);
                 str[str_len] = '\0';
                 ZVAL_STRING(word, str, 1);
-                efree(str);
+                linger_efree(str);
                 add_next_index_zval(*data, word);
             }
         }
@@ -221,10 +221,8 @@ PHP_METHOD(linger_TrieTree, searchOne)
     int offset = -1, ret;
     ret = trie_search_one(intern->trie, text, text_len, &return_value);
     if (ret == 0) {
-        return;
-    } else if (ret == 1) {
-
-    } else {
+        RETURN_NULL();
+    } else if (ret == -1) {
         RETURN_FALSE;
     }
 }
@@ -244,9 +242,7 @@ PHP_METHOD(linger_TrieTree, searchAll)
     int i, ret;
     TrieObject *intern = zend_object_store_get_object(getThis() TSRMLS_CC);
     ret = trie_search_all(intern->trie, text, text_len, &return_value);
-    if (ret == 0) {
-        return;
-    } else {
+    if (ret == -1) {
         RETURN_FALSE;
     }
 }
