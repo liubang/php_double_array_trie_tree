@@ -32,6 +32,18 @@ $res = $filter->searchAll($content);
 print_r($res);
 ```
 
+## Performance
+
+- Size of dictionary words: 3954
+- Length of destination string: 14352
+- Times: 100000
+
+```shell
+liubang@venux:~/workspace/php/test/filter$ php test.php 
+Double-Array Trie tree: 1.86985206604
+    regular expression: 63.114347934723
+```
+
 ## Thanks
 
 Inspired by [wulijun/php-ext-trie-filter](https://github.com/wulijun/php-ext-trie-filter.git)
