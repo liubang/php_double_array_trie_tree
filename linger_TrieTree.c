@@ -35,7 +35,8 @@ static zend_object_handlers linger_TrieTree_object_handlers;
 
 static void linger_TrieTree_free_object_storage_handler(zend_object *internal TSRMLS_DC)
 {
-    TrieObject *trieObject = ZOBJ_GET_TRIE_OBJECT(internal);
+    // TrieObject *trieObject = ZOBJ_GET_TRIE_OBJECT(internal);
+    TrieObject *trieObject = (TrieObject *) internal;
     trie_free(trieObject->trie);
     zend_object_std_dtor(internal TSRMLS_CC);
     linger_efree(internal);
@@ -131,7 +132,7 @@ static int trie_search_one(Trie *trie, unsigned char *org_text, int org_text_len
     base = text;
 
     if (!(s = trie_root(trie))) {
-        linger_efree(text);
+        linger_efree(base);
         return -1;
     }
 
@@ -157,7 +158,7 @@ static int trie_search_one(Trie *trie, unsigned char *org_text, int org_text_len
             str[str_len] = '\0';
             MY_ZVAL_STRING(*data, str, 1);
             linger_efree(str);
-            linger_efree(text);
+            linger_efree(base);
             return 1;
         }
 
@@ -166,7 +167,7 @@ static int trie_search_one(Trie *trie, unsigned char *org_text, int org_text_len
     }
 
     trie_state_free(s);
-    linger_efree(text);
+    linger_efree(base);
     return 0;
 }
 
@@ -181,6 +182,7 @@ static int trie_search_all(Trie *trie, unsigned char *org_text, int org_text_len
     zval *word = NULL;
     base = text;
     if (! (s = trie_root(trie))) {
+        linger_efree(base);
         return -1;
     }
 

@@ -48,7 +48,7 @@ extern zend_module_entry linger_TrieTree_module_entry;
 #define LINGER_TRIETREE_G(v) (linger_TrieTree_globals.v)
 #endif
 
-#define linger_efree(ptr) if(ptr) efree(ptr)
+#define linger_efree(ptr) if(ptr) efree((void *) (ptr))
 
 typedef struct _TrieObject {
     zend_object std;
