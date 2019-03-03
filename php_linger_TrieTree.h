@@ -20,6 +20,11 @@
 #ifndef PHP_LINGER_TRIETREE_H
 #define PHP_LINGER_TRIETREE_H
 
+#include "src/datrie/triedefs.h"
+#include "src/datrie/typedefs.h"
+#include "src/datrie/trie.h"
+
+
 extern zend_module_entry linger_TrieTree_module_entry;
 #define phpext_linger_TrieTree_ptr &linger_TrieTree_module_entry
 
@@ -44,6 +49,22 @@ extern zend_module_entry linger_TrieTree_module_entry;
 #endif
 
 #define linger_efree(ptr) if(ptr) efree(ptr)
+
+typedef struct _TrieObject {
+    zend_object std;
+    Trie *trie;
+} TrieObject;
+
+#if PHP_MAJOR_VERSION >= 5 && PHP_MAJOR_VERSION < 7
+#define GET_TRIE_OBJECT(zv)       zend_object_store_get_object(zv TSRMLS_CC)
+#define MY_ZVAL_STRING(z, s, d)   ZVAL_STRING(z, s, d)
+#define MY_MAKE_STD_ZVAL(p)       MAKE_STD_ZVAL(p)
+#elif PHP_MAJOR_VERSION >= 7
+#define GET_TRIE_OBJECT(zv)       (TrieObject *) ((char *)Z_OBJ_P(zv) - XtOffsetOf(TrieObject, std))
+#define ZOBJ_GET_TRIE_OBJECT(zobj) (TrieObject *) ((char *)(zobj) - XtOffsetOf(TrieObject, std))
+#define MY_ZVAL_STRING(z, s, d)   ZVAL_STRING(z, s)
+#define MY_MAKE_STD_ZVAL(p)       zval _stack_zval_##p; p = &(_stack_zval_##p)
+#endif
 
 #endif	/* PHP_LINGER_TRIETREE_H */
 

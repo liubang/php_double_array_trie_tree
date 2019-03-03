@@ -25,28 +25,20 @@
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
+#include "ext/standard/php_var.h"
 #include "php_linger_TrieTree.h"
-
-#include "src/datrie/triedefs.h"
-#include "src/datrie/typedefs.h"
-#include "src/datrie/trie.h"
 
 static int le_linger_TrieTree;
 
 zend_class_entry *linger_TrieTree_ce;
 static zend_object_handlers linger_TrieTree_object_handlers;
 
-typedef struct _TrieObject {
-    zend_object std;
-    Trie *trie;
-} TrieObject;
-
-
-static void linger_TrieTree_free_object_storage_handler(TrieObject *intern TSRMLS_DC)
+static void linger_TrieTree_free_object_storage_handler(zend_object *internal TSRMLS_DC)
 {
-    zend_object_std_dtor(&intern->std TSRMLS_CC);
-    trie_free(intern->trie);
-    linger_efree(intern);
+    TrieObject *trieObject = ZOBJ_GET_TRIE_OBJECT(internal);
+    trie_free(trieObject->trie);
+    zend_object_std_dtor(internal TSRMLS_CC);
+    linger_efree(internal);
 }
 
 #define TRIE_NEW(trie, alpha_map)                                       \
@@ -66,15 +58,13 @@ static void linger_TrieTree_free_object_storage_handler(TrieObject *intern TSRML
         }                                                               \
     } while(0)
 
+#if PHP_MAJOR_VERSION >= 5 && PHP_MAJOR_VERSION < 7
 zend_object_value linger_TrieTree_create_object_handler(zend_class_entry *class_type TSRMLS_DC)
 {
     zend_object_value retval;
     TrieObject *intern = emalloc(sizeof(TrieObject));
     memset(intern, 0, sizeof(TrieObject));
-    Trie *trie;
-    AlphaMap *alpha_map;
-    TRIE_NEW(trie, alpha_map);
-    intern->trie = trie;
+    intern->trie = NULL;
     zend_object_std_init(&intern->std, class_type TSRMLS_CC);
     retval.handle = zend_objects_store_put(
                         intern,
@@ -86,6 +76,19 @@ zend_object_value linger_TrieTree_create_object_handler(zend_class_entry *class_
     retval.handlers = &linger_TrieTree_object_handlers;
     return retval;
 }
+#elif PHP_MAJOR_VERSION >= 7
+zend_object *linger_TrieTree_create_object_handler(zend_class_entry *class_type) {
+    TrieObject *internal;
+    internal = ecalloc(1, sizeof(TrieObject) + zend_object_properties_size(class_type)); 
+    internal->trie = NULL;
+
+    zend_object_std_init(&internal->std, class_type);
+    object_properties_init(&internal->std, class_type);
+    internal->std.handlers = &linger_TrieTree_object_handlers;
+
+    return &internal->std;
+}
+#endif
 
 
 /* linger/TrieTree methods */
@@ -99,7 +102,8 @@ PHP_METHOD(linger_TrieTree, __construct)
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &path, &path_len) == FAILURE) {
         RETURN_NULL();
     }
-    intern = zend_object_store_get_object(getThis() TSRMLS_CC);
+    // intern = zend_object_store_get_object(getThis() TSRMLS_CC);
+    intern = GET_TRIE_OBJECT(getThis());
     intern->trie = trie_new_from_file(path);
     if (!intern->trie) {
         zend_throw_exception(NULL, "Unable to load file", 0 TSRMLS_CC);
@@ -110,7 +114,7 @@ PHP_METHOD(linger_TrieTree, __construct)
     do {                                                            \
         alpha_text = emalloc(sizeof(AlphaChar) * (text_len + 1));   \
         int i;                                                      \
-        for (i = 0; i < text_len; i++) {                        \
+        for (i = 0; i < text_len; i++) {                            \
             alpha_text[i] = (AlphaChar) text[i];                    \
         }                                                           \
         alpha_text[text_len] = TRIE_CHAR_TERM;                      \
@@ -124,15 +128,16 @@ static int trie_search_one(Trie *trie, unsigned char *org_text, int org_text_len
     const AlphaChar *base;
     AlphaChar *text;
     MAKE_ALPHA_TEXT(text, org_text, org_text_len);
-
     base = text;
-    if (! (s = trie_root(trie))) {
+
+    if (!(s = trie_root(trie))) {
+        linger_efree(text);
         return -1;
     }
 
     while (*text) {
         p = text;
-        if (! trie_state_is_walkable(s, *p)) {
+        if (!trie_state_is_walkable(s, *p)) {
             trie_state_rewind(s);
             text++;
             continue;
@@ -140,8 +145,9 @@ static int trie_search_one(Trie *trie, unsigned char *org_text, int org_text_len
             trie_state_walk(s, *p++);
         }
 
-        while (trie_state_is_walkable(s, *p) && ! trie_state_is_terminal(s))
+        while (trie_state_is_walkable(s, *p) && !trie_state_is_terminal(s)) {
             trie_state_walk(s, *p++);
+        }
 
         if (trie_state_is_terminal(s)) {
             trie_state_free(s);
@@ -149,16 +155,18 @@ static int trie_search_one(Trie *trie, unsigned char *org_text, int org_text_len
             unsigned char *str = emalloc(sizeof(unsigned char) * (str_len + 1));
             strncpy(str, org_text + (text - base), str_len);
             str[str_len] = '\0';
-            ZVAL_STRING(*data, str, 1);
+            MY_ZVAL_STRING(*data, str, 1);
             linger_efree(str);
+            linger_efree(text);
             return 1;
         }
 
         trie_state_rewind(s);
         text++;
     }
+
     trie_state_free(s);
-    linger_efree(base);
+    linger_efree(text);
     return 0;
 }
 
@@ -186,12 +194,12 @@ static int trie_search_all(Trie *trie, unsigned char *org_text, int org_text_len
         while(*p && trie_state_is_walkable(s, *p) && ! trie_state_is_leaf(s)) {
             trie_state_walk(s, *p++);
             if (trie_state_is_terminal(s)) {
-                MAKE_STD_ZVAL(word);
+                MY_MAKE_STD_ZVAL(word);
                 int str_len = p - text;
                 unsigned char *str = emalloc(sizeof(unsigned char) * (str_len + 1));
                 strncpy(str, org_text + (text - base), str_len);
                 str[str_len] = '\0';
-                ZVAL_STRING(word, str, 1);
+                MY_ZVAL_STRING(word, str, 1);
                 linger_efree(str);
                 add_next_index_zval(*data, word);
             }
@@ -207,19 +215,30 @@ static int trie_search_all(Trie *trie, unsigned char *org_text, int org_text_len
 
 PHP_METHOD(linger_TrieTree, searchOne)
 {
-    unsigned char *text;
+    char *text;
     int text_len;
+
+#if PHP_MAJOR_VERSION >= 5 && PHP_MAJOR_VERSION < 7
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &text, &text_len) == FAILURE) {
-        RETURN_FALSE;
+#elif PHP_MAJOR_VERSION >= 7
+    zend_string *zs_text;
+    if (zend_parse_parameters_throw(ZEND_NUM_ARGS(), "S", &zs_text) == FAILURE) {
+#endif
+        return;
     }
 
-    if (text_len < 1 || strlen(text) != text_len) {
+#if PHP_MAJOR_VERSION >= 7
+    text = ZSTR_VAL(zs_text);
+    text_len = ZSTR_LEN(zs_text);
+#endif
+
+    if (!text_len) {
         zend_throw_exception(NULL, "empty str!", 0 TSRMLS_CC);
     }
 
-    TrieObject *intern = zend_object_store_get_object(getThis() TSRMLS_CC);
+    TrieObject *intern = GET_TRIE_OBJECT(getThis());
     int offset = -1, ret;
-    ret = trie_search_one(intern->trie, text, text_len, &return_value);
+    ret = trie_search_one(intern->trie, (unsigned char *) text, text_len, &return_value);
     if (ret == 0) {
         RETURN_NULL();
     } else if (ret == -1) {
@@ -229,18 +248,31 @@ PHP_METHOD(linger_TrieTree, searchOne)
 
 PHP_METHOD(linger_TrieTree, searchAll)
 {
-    unsigned char *text;
+    char *text;
     int text_len;
+
+#if PHP_MAJOR_VERSION >= 5 && PHP_MAJOR_VERSION < 7
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &text, &text_len) == FAILURE) {
-        RETURN_FALSE;
+#else
+    zend_string *zs_text;
+    if (zend_parse_parameters_throw(ZEND_NUM_ARGS(), "S", &zs_text) == FAILURE) {
+#endif
+        return;
     }
-    if (text_len < 1 || strlen(text) != text_len) {
+
+#if PHP_MAJOR_VERSION >= 7
+    text = ZSTR_VAL(zs_text);
+    text_len = ZSTR_LEN(zs_text);
+#endif
+
+    if (!text_len) {
         zend_throw_exception(NULL, "empty str!", 0 TSRMLS_CC);
         return;
     }
     array_init(return_value);
     int i, ret;
-    TrieObject *intern = zend_object_store_get_object(getThis() TSRMLS_CC);
+    //TrieObject *intern = zend_object_store_get_object(getThis() TSRMLS_CC);
+    TrieObject *intern = GET_TRIE_OBJECT(getThis());
     ret = trie_search_all(intern->trie, text, text_len, &return_value);
     if (ret == -1) {
         RETURN_FALSE;
@@ -251,13 +283,23 @@ PHP_METHOD(linger_TrieTree, searchAll)
 
 PHP_METHOD(linger_TrieTree, build)
 {
-    zval *keyword_arr;
+    zval *keyword_arr = NULL;
+    AlphaChar alpha_key[KEYWORD_MAX_LEN + 1];
     char *file;
     int file_len;
-    AlphaChar alpha_key[KEYWORD_MAX_LEN + 1];
+#if PHP_MAJOR_VERSION >= 5 && PHP_MAJOR_VERSION < 7
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zs", &keyword_arr, &file, &file_len) == FAILURE) {
-        RETURN_FALSE;
+#elif PHP_MAJOR_VERSION >= 7
+    zend_string *file_path;
+    if (zend_parse_parameters_throw(ZEND_NUM_ARGS(), "zS", &keyword_arr, &file_path) == FAILURE) {
+#endif
+        return;
     }
+
+#if PHP_MAJOR_VERSION >= 7
+    file = ZSTR_VAL(file_path);
+    file_len = ZSTR_LEN(file_path);
+#endif
     if (Z_TYPE_P(keyword_arr) != IS_ARRAY) {
         zend_throw_exception(NULL, "the first parameter must be array", 0 TSRMLS_CC);
         return;
@@ -287,16 +329,26 @@ PHP_METHOD(linger_TrieTree, build)
         }                                           \
     } while(0)
 
-    int size = 0;
-    for (zend_hash_internal_pointer_reset(ht_keys); zend_hash_get_current_data(ht_keys, (void **) &current) == SUCCESS; zend_hash_move_forward(ht_keys)) {
-        SEPARATE_ZVAL(current);
-        convert_to_string_ex(current);
-        unsigned char *word = Z_STRVAL_PP(current);
+#if PHP_MAJOR_VERSION >=5 && PHP_MAJOR_VERSION < 7
+    for (zend_hash_internal_pointer_reset(ht_keys); 
+            zend_hash_get_current_data(ht_keys, (void **) &current) == SUCCESS; 
+            zend_hash_move_forward(ht_keys)) {
+        unsigned char *word = emalloc(Z_STRLEN_P((*current)) + 1);
+        memcpy(word, Z_STRVAL_P((*current)), Z_STRLEN_P((*current)) + 1);
         TRIE_STORE(word, alpha_key, trie);
     }
+#elif PHP_MAJOR_VERSION >= 7
+    zval *zv;
+    ZEND_HASH_FOREACH_VAL(ht_keys, zv) {
+        unsigned char *word = emalloc(Z_STRLEN_P(zv) + 1);
+        memcpy(word, Z_STRVAL_P(zv), Z_STRLEN_P(zv) + 1);
+        TRIE_STORE(word, alpha_key, trie);
+    } ZEND_HASH_FOREACH_END();
+#endif
 
     trie_save(trie, file);
     trie_free(trie);
+
     RETURN_TRUE;
 }
 
@@ -317,6 +369,12 @@ PHP_MINIT_FUNCTION(linger_TrieTree)
     linger_TrieTree_ce = zend_register_internal_class(&ce TSRMLS_CC);
     linger_TrieTree_ce->create_object = linger_TrieTree_create_object_handler;
     memcpy(&linger_TrieTree_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+
+#if PHP_MAJOR_VERSION >= 7
+    linger_TrieTree_object_handlers.offset = XtOffsetOf(TrieObject, std);
+    linger_TrieTree_object_handlers.free_obj = linger_TrieTree_free_object_storage_handler;
+#endif
+
     return SUCCESS;
 }
 /* }}} */
