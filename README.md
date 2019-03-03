@@ -4,7 +4,7 @@
 
 ## Dependence
 
-- php >=5.4 && php < 7
+- php >=5.4
 
 ## Useage
 
