@@ -1,6 +1,6 @@
 # php spam word filter based on Double-Array Trie tree
 
-[![Build Status](https://travis-ci.org/iliubang/php_double_array_trie_tree.svg?branch=master)](https://travis-ci.org/iliubang/php_double_array_trie_tree)
+[![Build Status](https://travis-ci.org/liubang/php_double_array_trie_tree.svg?branch=master)](https://travis-ci.org/liubang/php_double_array_trie_tree)
 
 ## Dependence
 
@@ -11,7 +11,7 @@
 **Compile and Install**
 
 ```shell
-git clone https://github.com/iliubang/php-double-array-trie-tree.git
+git clone https://github.com/liubang/php-double-array-trie-tree.git
 cd php-double-array-trie-tree
 phpize
 ./configure
@@ -39,7 +39,7 @@ print_r($res);
 - Times: 100000
 
 ```shell
-liubang@venux:~/workspace/php/test/filter$ php test.php 
+liubang@venux:~/workspace/php/test/filter$ php test.php
 Double-Array Trie tree: 1.86985206604
     regular expression: 63.114347934723
 ```
@@ -49,4 +49,3 @@ Double-Array Trie tree: 1.86985206604
 Inspired by [wulijun/php-ext-trie-filter](https://github.com/wulijun/php-ext-trie-filter.git)
 
 Depends on [libdatrie-0.2.4](https://linux.thai.net/~thep/datrie/datrie.html)
-
