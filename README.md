@@ -1,8 +1,8 @@
 # php spam word filter based on Double-Array Trie tree
 
-![Travis (.org) branch](https://img.shields.io/travis/liubang/php-double-array-trie-tree/master?style=flat-square)
-![License: MIT](https://img.shields.io/github/license/liubang/php-double-array-trie-tree?style=flat-square)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/liubang/php-double-array-trie-tree?style=flat-square)
+![Travis (.org) branch](https://img.shields.io/travis/liubang/php_double_array_trie_tree/master?style=flat-square)
+![License: MIT](https://img.shields.io/github/license/liubang/php_double_array_trie_tree?style=flat-square)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/liubang/php_double_array_trie_tree?style=flat-square)
 
 ## Dependence
 
@@ -13,8 +13,8 @@
 **Compile and Install**
 
 ```shell
-git clone https://github.com/liubang/php-double-array-trie-tree.git
-cd php-double-array-trie-tree
+git clone https://github.com/liubang/php_double_array_trie_tree.git
+cd php_double_array_trie_tree
 phpize
 ./configure
 make && sudo make install
