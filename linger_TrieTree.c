@@ -33,29 +33,54 @@ static int le_linger_TrieTree;
 zend_class_entry *linger_TrieTree_ce;
 static zend_object_handlers linger_TrieTree_object_handlers;
 
+#if PHP_MAJOR_VERSION >= 5 && PHP_MAJOR_VERSION < 7
 static void linger_TrieTree_free_object_storage_handler(zend_object *internal TSRMLS_DC)
+#elif PHP_MAJOR_VERSION >= 7
+static void linger_TrieTree_free_object_storage_handler(zend_object *internal)
+#endif
 {
     // TrieObject *trieObject = ZOBJ_GET_TRIE_OBJECT(internal);
     TrieObject *trieObject = (TrieObject *) internal;
     trie_free(trieObject->trie);
+#if PHP_MAJOR_VERSION >= 5 && PHP_MAJOR_VERSION < 7
     zend_object_std_dtor(internal TSRMLS_CC);
+#elif PHP_MAJOR_VERSION >= 7
+    zend_object_std_dtor(internal);
+#endif
     linger_efree(internal);
 }
+
+static void php_error_func(const char *docref, int type, const char *format) {
+#if PHP_MAJOR_VERSION >= 5 && PHP_MAJOR_VERSION < 7
+    php_error_docref(docref TSRMLS_CC, type, format);
+#elif PHP_MAJOR_VERSION >= 7
+    php_error_docref(docref, type, format);
+#endif
+}
+
+static void php_throw_exception_func(zend_class_entry *exception_ce, const char *message, int64_t code) {
+#if PHP_MAJOR_VERSION >= 5 && PHP_MAJOR_VERSION < 7
+    zend_throw_exception(exception_ce, message, (zend_ulong) code TSRMLS_CC);
+#elif PHP_MAJOR_VERSION >= 7
+    zend_throw_exception(exception_ce, message, (zend_long) code);
+#endif
+}
+
 
 #define TRIE_NEW(trie, alpha_map)                                       \
     do {                                                                \
         alpha_map = alpha_map_new();                                    \
         if (!alpha_map) {                                               \
-            php_error_docref(NULL TSRMLS_CC, E_ERROR, "init error");    \
+            php_error_func(NULL, E_ERROR, "init error");    \
         }                                                               \
         if (alpha_map_add_range(alpha_map, 0x00, 0xff) != 0) {          \
             alpha_map_free(alpha_map);                                  \
-            php_error_docref(NULL TSRMLS_CC, E_ERROR, "init error");    \
+            php_error_func(NULL, E_ERROR, "init error");    \
         }                                                               \
         trie = trie_new(alpha_map);                                     \
         alpha_map_free(alpha_map);                                      \
         if (!trie) {                                                    \
-            php_error_docref(NULL TSRMLS_CC, E_ERROR, "init error");    \
+            php_error_func(NULL, E_ERROR, "init error");    \
         }                                                               \
     } while(0)
 
@@ -100,14 +125,18 @@ PHP_METHOD(linger_TrieTree, __construct)
     long path_len;
     Trie *trie;
     TrieObject *intern;
+#if PHP_MAJOR_VERSION >= 5 && PHP_MAJOR_VERSION < 7
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &path, &path_len) == FAILURE) {
+#elif PHP_MAJOR_VERSION >= 7
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &path, &path_len) == FAILURE) {
+#endif
         RETURN_NULL();
     }
     // intern = zend_object_store_get_object(getThis() TSRMLS_CC);
     intern = GET_TRIE_OBJECT(getThis());
     intern->trie = trie_new_from_file(path);
     if (!intern->trie) {
-        zend_throw_exception(NULL, "Unable to load file", 0 TSRMLS_CC);
+        php_throw_exception_func(NULL, "Unable to load file", 0);
     }
 }
 
@@ -235,7 +264,7 @@ PHP_METHOD(linger_TrieTree, searchOne)
 #endif
 
     if (!text_len) {
-        zend_throw_exception(NULL, "empty str!", 0 TSRMLS_CC);
+        php_throw_exception_func(NULL, "empty str!", 0);
     }
 
     TrieObject *intern = GET_TRIE_OBJECT(getThis());
@@ -268,7 +297,7 @@ PHP_METHOD(linger_TrieTree, searchAll)
 #endif
 
     if (!text_len) {
-        zend_throw_exception(NULL, "empty str!", 0 TSRMLS_CC);
+        php_throw_exception_func(NULL, "empty str!", 0);
         return;
     }
     array_init(return_value);
@@ -302,15 +331,16 @@ PHP_METHOD(linger_TrieTree, build)
     file = ZSTR_VAL(file_path);
     file_len = ZSTR_LEN(file_path);
 #endif
+
     if (Z_TYPE_P(keyword_arr) != IS_ARRAY) {
-        zend_throw_exception(NULL, "the first parameter must be array", 0 TSRMLS_CC);
+        php_throw_exception_func(NULL, "the first parameter must be array", 0);
         return;
     }
 
     zval **current;
     HashTable *ht_keys = HASH_OF(keyword_arr);
     if (!ht_keys) {
-        zend_throw_exception(NULL, "Couldn't get HashTable in parameter one", 0 TSRMLS_CC);
+        php_throw_exception_func(NULL, "Couldn't get HashTable in parameter one", 0);
         return;
     }
 
@@ -355,10 +385,10 @@ PHP_METHOD(linger_TrieTree, build)
 }
 
 const zend_function_entry linger_TrieTree_methods[] = {
-    PHP_ME(linger_TrieTree, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    PHP_ME(linger_TrieTree, searchOne, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(linger_TrieTree, searchAll, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(linger_TrieTree, build, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(linger_TrieTree, __construct, arginfo_class_linger_trietree___construct, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+    PHP_ME(linger_TrieTree, searchOne, arginfo_class_linger_trietree_searchone, ZEND_ACC_PUBLIC)
+    PHP_ME(linger_TrieTree, searchAll, arginfo_class_linger_trietree_searchall, ZEND_ACC_PUBLIC)
+    PHP_ME(linger_TrieTree, build, arginfo_class_linger_trietree_build, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_FE_END
 };
 
@@ -368,7 +398,11 @@ PHP_MINIT_FUNCTION(linger_TrieTree)
 {
     zend_class_entry ce;
     INIT_CLASS_ENTRY(ce, "Linger\\TrieTree", linger_TrieTree_methods);
+#if PHP_MAJOR_VERSION >=5 && PHP_MAJOR_VERSION < 7
     linger_TrieTree_ce = zend_register_internal_class(&ce TSRMLS_CC);
+#elif PHP_MAJOR_VERSION >= 7
+    linger_TrieTree_ce = zend_register_internal_class(&ce);
+#endif
     linger_TrieTree_ce->create_object = linger_TrieTree_create_object_handler;
     memcpy(&linger_TrieTree_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 

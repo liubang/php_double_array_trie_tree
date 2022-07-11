@@ -1,6 +1,6 @@
 # php spam word filter based on Double-Array Trie tree
 
-![Travis (.org) branch](https://img.shields.io/travis/liubang/php_double_array_trie_tree/master?style=flat-square)
+![Build Status](https://github.com/liubang/php_double_array_trie_tree/workflows/integrate/badge.svg?branch=master)
 ![License: MIT](https://img.shields.io/github/license/liubang/php_double_array_trie_tree?style=flat-square)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/liubang/php_double_array_trie_tree?style=flat-square)
 

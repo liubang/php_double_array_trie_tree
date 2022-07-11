@@ -59,11 +59,51 @@ typedef struct _TrieObject {
 #define GET_TRIE_OBJECT(zv)       zend_object_store_get_object(zv TSRMLS_CC)
 #define MY_ZVAL_STRING(z, s, d)   ZVAL_STRING(z, s, d)
 #define MY_MAKE_STD_ZVAL(p)       MAKE_STD_ZVAL(p)
+
 #elif PHP_MAJOR_VERSION >= 7
 #define GET_TRIE_OBJECT(zv)       (TrieObject *) ((char *)Z_OBJ_P(zv) - XtOffsetOf(TrieObject, std))
 #define ZOBJ_GET_TRIE_OBJECT(zobj) (TrieObject *) ((char *)(zobj) - XtOffsetOf(TrieObject, std))
 #define MY_ZVAL_STRING(z, s, d)   ZVAL_STRING(z, s)
 #define MY_MAKE_STD_ZVAL(p)       zval _stack_zval_##p; p = &(_stack_zval_##p)
+
+#endif
+
+#if PHP_MAJOR_VERSION > 7
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_linger_trietree___construct, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_linger_trietree_searchone, 0, 1, IS_MIXED, 0)
+	ZEND_ARG_TYPE_INFO(0, name, IS_STRING, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_linger_trietree_searchall, 0, 1, IS_MIXED, 0)
+	ZEND_ARG_TYPE_INFO(0, name, IS_STRING, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_linger_trietree_build, 0, 2, IS_VOID, 0)
+	ZEND_ARG_TYPE_INFO(0, name, IS_ARRAY, 0)
+	ZEND_ARG_TYPE_INFO(0, value, IS_STRING, 0)
+ZEND_END_ARG_INFO()
+
+#else
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_linger_trietree___construct, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_linger_trietree_searchone, 0, 0, 1)
+    ZEND_ARG_INFO(0, name)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_linger_trietree_searchall, 0, 0, 1)
+    ZEND_ARG_INFO(0, name)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_linger_trietree_build, 0, 0, 2)
+    ZEND_ARG_INFO(0, name)
+    ZEND_ARG_INFO(0, path)
+ZEND_END_ARG_INFO()
+
 #endif
 
 #endif	/* PHP_LINGER_TRIETREE_H */
