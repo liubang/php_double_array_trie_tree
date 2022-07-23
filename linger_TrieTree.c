@@ -28,6 +28,12 @@
 #include "ext/standard/php_var.h"
 #include "php_linger_TrieTree.h"
 
+#if PHP_MAJOR_VERSION > 7
+#include "linger_TrieTree_arginfo.h"
+#else
+#include "linger_TrieTree_legacy_arginfo.h"
+#endif
+
 static int le_linger_TrieTree;
 
 zend_class_entry *linger_TrieTree_ce;
@@ -71,16 +77,16 @@ static void php_throw_exception_func(zend_class_entry *exception_ce, const char 
     do {                                                                \
         alpha_map = alpha_map_new();                                    \
         if (!alpha_map) {                                               \
-            php_error_func(NULL, E_ERROR, "init error");    \
+            php_error_func(NULL, E_ERROR, "init error");                \
         }                                                               \
         if (alpha_map_add_range(alpha_map, 0x00, 0xff) != 0) {          \
             alpha_map_free(alpha_map);                                  \
-            php_error_func(NULL, E_ERROR, "init error");    \
+            php_error_func(NULL, E_ERROR, "init error");                \
         }                                                               \
         trie = trie_new(alpha_map);                                     \
         alpha_map_free(alpha_map);                                      \
         if (!trie) {                                                    \
-            php_error_func(NULL, E_ERROR, "init error");    \
+            php_error_func(NULL, E_ERROR, "init error");                \
         }                                                               \
     } while(0)
 
@@ -385,10 +391,10 @@ PHP_METHOD(linger_TrieTree, build)
 }
 
 const zend_function_entry linger_TrieTree_methods[] = {
-    PHP_ME(linger_TrieTree, __construct, arginfo_class_linger_trietree___construct, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    PHP_ME(linger_TrieTree, searchOne, arginfo_class_linger_trietree_searchone, ZEND_ACC_PUBLIC)
-    PHP_ME(linger_TrieTree, searchAll, arginfo_class_linger_trietree_searchall, ZEND_ACC_PUBLIC)
-    PHP_ME(linger_TrieTree, build, arginfo_class_linger_trietree_build, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(linger_TrieTree, __construct, arginfo_class_Linger_TrieTree___construct, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+    PHP_ME(linger_TrieTree, searchOne, arginfo_class_Linger_TrieTree_searchOne, ZEND_ACC_PUBLIC)
+    PHP_ME(linger_TrieTree, searchAll, arginfo_class_Linger_TrieTree_searchAll, ZEND_ACC_PUBLIC)
+    PHP_ME(linger_TrieTree, build, arginfo_class_Linger_TrieTree_build, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_FE_END
 };
 
