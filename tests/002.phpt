@@ -1,30 +1,38 @@
 --TEST--
-Check for linger_TrieTree presence
+Verify dictionary build and keyword matching workflow
 --SKIPIF--
 <?php if (!extension_loaded("linger_TrieTree")) print "skip"; ?>
 --FILE--
-<?php 
-$dic = './tmp.dic';
-$words = array('管理员','admin','哈哈','我擦');
-linger\TrieTree::build($words, $dic);
+<?php
+$dictionaryFile = './tmp.dic';
+$dictionary = array(
+    '管理员',
+    'administrator',
+    '敏感词',
+    'restricted term',
+    'internal use only'
+);
+Linger\TrieTree::build($dictionary, $dictionaryFile);
 
-$filter = new linger\TrieTree($dic);
-var_dump($filter);
-$content = 'this is testadmin这是一段测试文字，哈哈的飞洒管理员的司法地方哈哈，火红的萨来开发大健康我擦';
-$res = $filter->searchOne($content);
-var_dump($res);
-$res = $filter->searchAll($content);
-print_r($res);
+$trie = new Linger\TrieTree($dictionaryFile);
+var_dump($trie);
+
+$input = 'This document is marked for internal use only. 请立即通知管理员，因为本段内容包含敏感词和 restricted term。';
+
+$firstMatch = $trie->searchOne($input);
+var_dump($firstMatch);
+
+$allMatches = $trie->searchAll($input);
+print_r($allMatches);
 ?>
 --EXPECTF--
 object(Linger\TrieTree)#1 (0) {
 }
-string(5) "admin"
+string(17) "internal use only"
 Array
 (
-    [0] => admin
-    [1] => 哈哈
-    [2] => 管理员
-    [3] => 哈哈
-    [4] => 我擦
+    [0] => internal use only
+    [1] => 管理员
+    [2] => 敏感词
+    [3] => restricted term
 )
